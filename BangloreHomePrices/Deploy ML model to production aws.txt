@@ -1,0 +1,272 @@
+Note:
+Used control + L to clear the data in git bash 
+and enter Q to enter code if u r not able to write code in git bash 
+
+STEPS TO DEPLOY ML MODEL
+--------------------------------------
+
+-Download keyword as .pem file during setting up EC2 instances
+-save this file in "C:\Users\APL73176-NITESHKUMAR\.ssh " location
+-Current location of EC2 instances is "C:\Users\APL73176-NITESHKUMAR\.ssh\Bangalore_House_Price_Prediction_25.9-ec2.pem"
+
+-Launch EC2 instances
+-Next we have to connect this using SSH client
+-We have to connect to cloud EC2 instance with our local windows machine ,for this we use gitbash 
+#Gitbash can be downloaded from git-scm.com
+#We use -i with ssh is used to coonect to a remote server /amazon aws.
+-Click on connect instances on AWS
+and enter "user@publicdns" for example with ssh-i in gitbash
+for Example:
+
+Open Gitbash console and Enter:  
+##
+ssh -i  "C:\Users\APL73176-NITESHKUMAR\.ssh\bhp.pem" ubuntu@ec2-52-87-233-228.compute-1.amazonaws.com
+##
+
+-After this write pwd to check the home location ,it should be "home/ubuntu"
+#
+pwd
+#
+-Now this means our local machine is connected with amazon aws cloud
+
+
+
+-Enter this to see different directory
+#
+ls /etc/init.d
+#
+
+
+*Now lets copy all our code to cloud machine using win-scp app
+-1.in hostname section of win-scp enter the aws public DNS code 
+#
+ec2-52-87-233-228.compute-1.amazonaws.com
+#
+-2.User Name:
+#
+ubuntu
+#
+-3.Password
+#for password click on advanced ,click on authentication under SSH ,select the .pem file avaible in .ssh file,then convert that to ppk#
+-Now Transfer the BangalorehousePrediction to home/ubuntu folder 
+
+
+-Now After that write,It will gives us the folder we copied ,in our case its 'BangaloreHomePrices" 
+#
+ls
+#
+
+-Now we can install 'Nginx' in our ubuntu/gitbash server,for this run below code,this will update all the packages that we have locally on this particlaur ec2 instance
+#
+sudo apt-get update
+#
+
+-Once updation done run below code to install nginx in ubuntu/gitbash server.This will install nginx webserver on ec2,"apt-get" is used to install software on ubuntu
+#
+sudo apt-get install nginx
+#
+
+-Once isntalled check the status of nginx installation by running below code ,it should be Active(Running)
+#
+sudo service nginx status
+#
+
+-Then we need to confirm the nginx is running fine on ubuntu server ,Run below Public DNS of aws ec2 instance in chrome ,if it shows 'welcome to nginx then its working fine'
+#
+ec2-52-87-233-228.compute-1.amazonaws.com
+#
+
+*Now we need to replace nginx file html page with bangalore homme price website html page to show our bangalore home price prediction website
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+-Check directory/file of nginx by below code
+#
+cd /etc/nginx/
+#
+pwd
+#
+ll
+#
+
+-Now from this file choose nginx.conf file
+#
+less nginx.conf
+#
+
+-Now we can see this below file location,now we know nginx.conf file is actually pointing us to sites-enabled directory,so lets open that
+include /etc/nginx/conf.d/*.conf;
+include /etc/nginx/sites-enabled/*;
+
+-Now Open sites-enabled directory and check
+#
+less sites-enabled/default
+#
+
+-After opening we sites-enabled/default directory we can see the root of it which is "var/www/html",Now lets open this html folder
+
+-Enter below code to open html folder
+#
+less /var/www/html/index.nginx-debian.html
+#
+
+-Now after entering this code ,we can see the html code displayed in chrome, which is 
+"Welcome to nginx!</h1>
+<p>If you see this page, the nginx web server is successfully installed and
+working. Further configuration is required."
+
+-Now all we have to do is change this defualt page to bangalore_home_price prediction home page which is in home/ubuntu directory
+-Now lets go back to our sites-enabled 
+#
+cd sites-enabled/
+#
+-so whatever is in sites-enabled directory it will use that as home page for port 80 default html rendering
+-Now enter
+#
+ls
+#
+ll
+#
+-after doing this we get " default -> /etc/nginx/sites-available/default " , which shows us that 
+then general practice in nginx is that ,the confg file are actually kept in sites-available and the symbolic links are kept in sites-enabled
+
+-So now i want to disable the default configuration ,so enter below code 
+#
+sudo unlink default
+#
+ll
+#
+-Now after unlinking i can check that , i dont have defualt file here because i dont want that 
+
+-Now go to sites-available  
+$
+cd ../sites-available/
+$
+ll
+$
+-Now we can see here that sites-available also haev default file as well
+
+-Now i want to create 1 more file here called bhp.conf,so eneter below code 
+$
+sudo vim bhp.conf
+$
+-and this conf file will point me to bangalorehomeprice directory
+
+-Now goto github link of codebasics sir ,he has given bhp.conf file 
+https://www.youtube.com/redirect?event=video_description&redir_token=QUFFLUhqa3BMNjRiSHBDb18xd0NrNmxCWVZsRlRkMW0xZ3xBQ3Jtc0tsRWxTekk5M2tRU3ZKakgyZm1BT3JJRGlqQ29pUHJMLTlEVVFwU2hYLVNTTFFGdXZuZGJOR1BDY1h2RTdZU0pIN2FRZV84aG1NYmlvNElqT1NFWXU2TS02OUYzX184dU15dWpXd3FKSDNyMHVTOGVEZw&q=https%3A%2F%2Fgithub.com%2Fcodebasics%2Fpy%2Ftree%2Fmaster%2FDataScience%2FBangloreHomePrices&v=q8NOmLD5pTU
+-it will have below code(bhp.conf) copy and paste it in git 
+$
+server {
+    listen 80;
+        server_name bhp;
+        root /home/ubuntu/BangloreHomePrices/client;
+        index app.html;
+        location /api/ {
+             rewrite ^/api(.*) $1 break;
+             proxy_pass http://127.0.0.1:5000;
+        }
+}
+$
+-after this enter to save this file 
+$
+:wq
+$
+
+-Now i have 2 file bhp.conf & defualt & Now i will create a symb link in my sites-enables ,write belwo code to do it 
+$
+cd ../sites-enabled/
+$
+sudo ln -v -s /etc/nginx/sites-available/bhp.conf inside /etc/nginx/sites-enabled
+$
+ll
+$
+-No we can see the symb link is created ,we can see now their is symb link for bhp.conf & inside 
+- Now remove inside file by below code 
+$
+sudo unlink inside
+$
+
+-Now restart nginx server so that it can use this new configuration,whatever is used in this particlaur directory ,it is going to use that configuration,run below code
+$
+sudo service nginx restart
+$
+-Now check the nginx server status
+$
+sudo service nginx status
+
+CONGRATS
+--------------
+-Now refresh aws server file and we can see the bangalirehouseprice prediction html file is live 
+-but here location and prediction not coming 
+-so lets see how to do that
+
+PART-2 ( add location & prediction in server)
+----------
+-i need to start my server ,so go to home directory 
+$
+cd ~
+$
+cd BangloreHomePrices/server/
+$
+
+-Now before we start the server ,we need to install few things.This machine is blank ,it doesnt have all the modules required to run our server
+$
+ll
+$
+-we can see requirements.txt,check that
+$
+less requirements.txt
+$
+-It has all the python module we need by the backend server
+
+-So we are going to install requirements by running below code 
+-first check python3
+$
+python3
+$
+-if its avaible then check pip3 availability
+Control+D
+$
+pip3
+$
+-if its not there ,install it ,code below
+$
+sudo apt install python3-pip
+$
+
+-Now use pip3 to install all the module requirements in requirements.txt file 
+$
+sudo pip3 install -r requirements.txt
+$
+
+-check requiremnts should have these versions 
+sudo pip3 install Flask==2.0.1
+sudo pip3 install numpy==1.20.1
+sudo pip3 install scikit-learn==0.24.1
+
+-Now i can start my server 
+$
+python3 server.py
+$
+
+CONGRATS It will show like this now 
+"Running on http://127.0.0.1:5000"
+
+-Run the server even after closing gitbash 
+$
+nohup python server.py &
+$
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
